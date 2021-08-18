@@ -17,7 +17,8 @@ build:
   # before_script:
   #   - apt update && apt -y install make autoconf
   script:
-    - g++ helloworld.cpp -o mybinary
+    - cmake -S . -B "build"
+    - cmake --build ./build --config Release
   artifacts:
     paths:
       - mybinary
