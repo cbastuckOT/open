@@ -1,6 +1,15 @@
 stages:
+  - test
   - build
   - deploy
+
+test: 
+  stage: test
+  image: node
+  script:
+    - cd web 
+    - npm install
+    - npm test -- --watchAll=false
 
 web:
   stage: build
