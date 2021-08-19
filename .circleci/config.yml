@@ -18,9 +18,11 @@ jobs:
       - image: node
     steps:
       - checkout
-      - run: cd web
-      - run: npm install
-      - run: npm run build
+      - run: cd web && npm install
+      - run: cd web && npm run build
+      - store_artifacts:
+          path: web/build
+          destination: webapp
 
   build-plugin:
     docker:
