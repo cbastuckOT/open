@@ -9,8 +9,13 @@ build:
       - build/app/EvalCI
 
 pages:
+  image: node
   script:
-    - cp -r web public
+    - cd web 
+    - npm install
+    - npm run build
+    - cd ..
+    - cp -r ./web/build public
   artifacts:
     paths:
       - public
