@@ -1,16 +1,5 @@
-.macos_buildcloud_runners:
-  image: rikorose/gcc-cmake
-
-stages:
-  - build
-
-before_script:
- - echo "started by ${GITLAB_USER_NAME}"
-
 build:
-  extends:
-    - .macos_buildcloud_runners
-  stage: build
+  image: rikorose/gcc-cmake
   script:
     - echo "running scripts in the build job"
     - cmake -S . -B "build"
@@ -18,3 +7,10 @@ build:
   artifacts:
     paths:
       - build/app/EvalCI
+
+pages:
+  script:
+    - cp -r web public
+  artifacts:
+    paths:
+      - public
