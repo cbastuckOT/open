@@ -1,21 +1,37 @@
-build:
-  image: rikorose/gcc-cmake
-  script:
-    - echo "running scripts in the build job"
-    - cmake -S . -B "build"
-    - cmake --build ./build --config Release
-  artifacts:
-    paths:
-      - build/app/EvalCI
+stages:
+  - build
+  - deploy
 
-pages:
+web:
+  stage: build
   image: node
   script:
     - cd web 
     - npm install
     - npm run build
-    - cd ..
-    - cp -r ./web/build public
+  artifacts:
+    paths:
+      - web/build
+
+plugin:
+  stage: build
+  image: rikorose/gcc-cmake
+  script:
+    - echo "running scripts in the build job"
+    - cmake -S . -B "build-c360"
+    - cmake --build ./build-c360 --config Release
+  artifacts:
+    paths:
+      - build-c360/app/EvalCI
+
+pages:
+  stage: deploy
+  image: alpine:latest
+  variables:
+    GIT_STRATEGY: none  # do not clone git repo
+  script:
+    - ls
+    - cp -r web/build public
   artifacts:
     paths:
       - public
