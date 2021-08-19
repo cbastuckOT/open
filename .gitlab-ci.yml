@@ -5,6 +5,8 @@ stages:
 web:
   stage: build
   image: node
+  variables: 
+    PUBLIC_URL: https://cbastuckot.gitlab.io/otstarter/
   script:
     - cd web 
     - npm install
@@ -30,7 +32,6 @@ pages:
   variables:
     GIT_STRATEGY: none  # do not clone git repo
   script:
-    - ls
     - cp -r web/build public
   artifacts:
     paths:
