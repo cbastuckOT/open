@@ -1,14 +1,43 @@
-# This config is equivalent to both the '.circleci/extended/orb-free.yml' and the base '.circleci/config.yml'
+
 version: 2.1
 
-orbs:
-  node: circleci/node@4.1
+jobs:
+  test:
+    docker: 
+      - image: node
+    steps:
+      - checkout
+      - run: cd web && npm install
+      - run: cd web && npm test -- --watchAll=false --testResultsProcessor="jest-junit"
+      - store_artifacts:
+          path: web/junit.xml
+          destination: junit.xml
+
+  build-web:
+    docker:
+      - image: node
+    steps:
+      - checkout
+      - run: cd web
+      - run: npm install
+      - run: npm run build
+
+  build-plugin:
+    docker:
+      - image: rikorose/gcc-cmake
+    steps:
+      - checkout
+      - run: cmake -S . -B "build-c360"
+      - run: cmake --build ./build-c360 --config Release
+      - store_artifacts:
+          path: build-c360
+          destination: build-c360
 
 workflows:
-  sample:
+  all:
     jobs:
-      - node/test:
-          version: '15.1'
-          # This is the node version to use for the `cimg/node` tag
-          # Relevant tags can be found on the CircleCI Developer Hub
-          # https://circleci.com/developer/images/image/cimg/node
+      - test
+      - build-web:
+          requires:
+            - test
+      - build-plugin
