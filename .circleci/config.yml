@@ -8,10 +8,12 @@ jobs:
     steps:
       - checkout
       - run: cd web && npm install
-      - run: cd web && npm test -- --watchAll=false --testResultsProcessor="jest-junit"
+      - run: cd web &&  npm test -- --watchAll=false --testResultsProcessor="jest-junit"
+      - run: ls *
       - store_artifacts:
           path: web/junit.xml
-          destination: junit.xml
+      - store_test_results:
+          path: web
 
   build-web:
     docker:
@@ -42,4 +44,7 @@ workflows:
       - build-web:
           requires:
             - test
-      - build-plugin
+      - build-plugin:
+          requires:
+            - test # temporary for testing to avoid builds
+
