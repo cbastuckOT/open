@@ -1,0 +1,53 @@
+stages:
+  - test
+  - build
+  - deploy
+
+test: 
+  stage: test
+  image: node
+  script:
+    - cd web 
+    - npm install
+    - npm test -- --watchAll=false --testResultsProcessor="jest-junit"
+  artifacts:
+    when: always
+    paths:
+      - web/junit.xml
+    reports:
+      junit: web/junit.xml
+
+web:
+  stage: build
+  image: node
+  variables: 
+    PUBLIC_URL: https://cbastuckot.gitlab.io/otstarter/
+  script:
+    - cd web 
+    - npm install
+    - npm run build
+  artifacts:
+    paths:
+      - web/build
+
+plugin:
+  stage: build
+  image: rikorose/gcc-cmake
+  script:
+    - echo "running scripts in the build job"
+    - cmake -S . -B "build-c360"
+    - cmake --build ./build-c360 --config Release
+  artifacts:
+    paths:
+      - build-c360/app/EvalCI
+
+pages:
+  stage: deploy
+  image: alpine:latest
+  variables:
+    GIT_STRATEGY: none  # do not clone git repo
+  script:
+    - cp -r web/build public
+  artifacts:
+    paths:
+      - public
