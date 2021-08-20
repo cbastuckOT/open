@@ -1,8 +1,11 @@
 
 version: 2.1
 
+orbs:
+  win: circleci/windows@2.2.0
+
 jobs:
-  prepare-web:
+  prepare-workspace:
     docker:
       - image: node:current-alpine
     steps:
@@ -47,7 +50,7 @@ jobs:
           path: web/build
           destination: webapp
 
-  build-plugin:
+  build-plugin-linux:
     docker:
       - image: rikorose/gcc-cmake
     steps:
@@ -59,17 +62,33 @@ jobs:
           path: build-c360
           destination: build-c360
 
+  build-plugin-windows:
+    executor: win/default
+    steps:
+      - attach_workspace:
+          at: .
+      - run: $ProgressPreference = "SilentlyContinue"; Invoke-RestMethod -Uri https://github.com/Kitware/CMake/releases/download/v3.21.1/cmake-3.21.1-windows-x86_64.zip -Method Get -OutFile cmake.zip
+      - run: Expand-Archive -Path cmake.zip -DestinationPath .\ 
+      - run: .\cmake-3.21.1-windows-x86_64\bin\cmake.exe -A x64 -S .\ -B "build64"
+      - run: .\cmake-3.21.1-windows-x86_64\bin\cmake.exe --build build64 --config Release
+      - store_artifacts:
+          path: .\build64\app
+          destination: build64-c360
+
 workflows:
   all:
     jobs:
-      - prepare-web    
+      - prepare-workspace    
       - test-web:
           requires:
-            - prepare-web
+            - prepare-workspace
       - build-web:
           requires:
             - test-web
-      - build-plugin:
+      - build-plugin-linux:
           requires:
-            - prepare-web # TODO: checkout happens here - dblcheck
+            - prepare-workspace
+      - build-plugin-windows:
+          requires:
+            - prepare-workspace 
 
