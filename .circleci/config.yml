@@ -2,14 +2,35 @@
 version: 2.1
 
 jobs:
-  test:
+  prepare-web:
+    docker:
+      - image: node:current-alpine
+    steps:
+      - checkout
+      - run: echo "0.0.${CIRCLE_BUILD_NUM}-${CIRCLE_SHA1:0:7}" | tee version.txt
+      - restore_cache:
+            keys:
+                - npm-deps-v1-{{ checksum "web/package-lock.json" }}
+                - npm-deps-v1
+      - run: cd web && npm install
+      - save_cache:
+            paths:
+                - web/node_modules
+            key: npm-deps-v1-{{ checksum "web/package-lock.json" }}-{{ epoch }}
+      - store_artifacts:
+            path: web/package-lock.json
+      - persist_to_workspace:
+            root: .
+            paths:
+                - .
+
+  test-web:
     docker: 
       - image: node
     steps:
-      - checkout
-      - run: cd web && npm install
+      - attach_workspace:
+          at: .
       - run: cd web &&  npm test -- --watchAll=false --testResultsProcessor="jest-junit"
-      - run: ls *
       - store_artifacts:
           path: web/junit.xml
       - store_test_results:
@@ -19,8 +40,8 @@ jobs:
     docker:
       - image: node
     steps:
-      - checkout
-      - run: cd web && npm install
+      - attach_workspace:
+          at: .
       - run: cd web && npm run build
       - store_artifacts:
           path: web/build
@@ -30,7 +51,8 @@ jobs:
     docker:
       - image: rikorose/gcc-cmake
     steps:
-      - checkout
+      - attach_workspace:
+          at: .
       - run: cmake -S . -B "build-c360"
       - run: cmake --build ./build-c360 --config Release
       - store_artifacts:
@@ -40,11 +62,14 @@ jobs:
 workflows:
   all:
     jobs:
-      - test
+      - prepare-web    
+      - test-web:
+          requires:
+            - prepare-web
       - build-web:
           requires:
-            - test
+            - test-web
       - build-plugin:
           requires:
-            - test # temporary for testing to avoid builds
+            - prepare-web # TODO: checkout happens here - dblcheck
 
