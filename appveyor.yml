@@ -1,4 +1,9 @@
-image: Visual Studio 2019
+#image: Ubuntu2004
+#image: macOS
+#image: Visual Studio 2019
+image: 
+  - Visual Studio 2019
+  - macOS
 before_build: 
   - cmake -S . -B "build"
 build_script:
