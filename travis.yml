@@ -1,12 +1,38 @@
-language: cpp
-compiler: clang
-os: osx
-install: cmake -S . -B "build"
-script: cmake --build ./build --config Release
-#deploy:
-#  provider: s3
-#  access_key_id: ""
-#  secret_access_key: ""
-#  bucket: "arn:aws:s3:::artefacts-dump"
-#  skip_cleanup: true
-#  local_dir: build
+dist: xenial
+
+jobs:
+  include:
+    - name: Test webapp
+      language: node_js
+      node_js: 12
+      script:
+        - cd web && npm install
+        - cd web && npm test -- --watchAll=false --testResultsProcessor="jest-junit"
+
+    - name: Build webapp
+      language: node_js
+      node_js: 12
+      script:
+        - cd web && npm install
+        - cd web && npm build
+      #deploy:
+      #  provider: s3
+      #  access_key_id: ""
+      #  secret_access_key: ""
+      #  bucket: "arn:aws:s3:::artefacts-dump"
+      #  skip_cleanup: true
+      #  local_dir: build
+
+    - name: Build plugin
+      language: cpp
+      compiler: clang
+      os: osx
+      install: cmake -S . -B "build"
+      script: cmake --build ./build --config Release
+      #deploy:
+      #  provider: s3
+      #  access_key_id: ""
+      #  secret_access_key: ""
+      #  bucket: "arn:aws:s3:::artefacts-dump"
+      #  skip_cleanup: true
+      #  local_dir: build
