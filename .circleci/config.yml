@@ -1,0 +1,94 @@
+
+version: 2.1
+
+orbs:
+  win: circleci/windows@2.2.0
+
+jobs:
+  prepare-workspace:
+    docker:
+      - image: node:current-alpine
+    steps:
+      - checkout
+      - run: echo "0.0.${CIRCLE_BUILD_NUM}-${CIRCLE_SHA1:0:7}" | tee version.txt
+      - restore_cache:
+            keys:
+                - npm-deps-v1-{{ checksum "web/package-lock.json" }}
+                - npm-deps-v1
+      - run: cd web && npm install
+      - save_cache:
+            paths:
+                - web/node_modules
+            key: npm-deps-v1-{{ checksum "web/package-lock.json" }}-{{ epoch }}
+      - store_artifacts:
+            path: web/package-lock.json
+      - persist_to_workspace:
+            root: .
+            paths:
+                - .
+
+  test-web:
+    docker: 
+      - image: node
+    steps:
+      - attach_workspace:
+          at: .
+      - run: cd web &&  npm test -- --watchAll=false --testResultsProcessor="jest-junit"
+      - store_artifacts:
+          path: web/junit.xml
+      - store_test_results:
+          path: web
+
+  build-web:
+    docker:
+      - image: node
+    steps:
+      - attach_workspace:
+          at: .
+      - run: cd web && npm run build
+      - store_artifacts:
+          path: web/build
+          destination: webapp
+
+  build-plugin-linux:
+    docker:
+      - image: rikorose/gcc-cmake
+    steps:
+      - attach_workspace:
+          at: .
+      - run: cmake -S . -B "build-c360"
+      - run: cmake --build ./build-c360 --config Release
+      - store_artifacts:
+          path: build-c360
+          destination: build-c360
+
+  build-plugin-windows:
+    executor: win/default
+    steps:
+      - attach_workspace:
+          at: .
+      - run: $ProgressPreference = "SilentlyContinue"; Invoke-RestMethod -Uri https://github.com/Kitware/CMake/releases/download/v3.21.1/cmake-3.21.1-windows-x86_64.zip -Method Get -OutFile cmake.zip
+      - run: Expand-Archive -Path cmake.zip -DestinationPath .\ 
+      - run: .\cmake-3.21.1-windows-x86_64\bin\cmake.exe -A x64 -S .\ -B "build64"
+      - run: .\cmake-3.21.1-windows-x86_64\bin\cmake.exe --build build64 --config Release
+      - store_artifacts:
+          path: .\build64\app
+          destination: build64-c360
+
+workflows:
+  all:
+    jobs:
+      - prepare-workspace    
+      - test-web:
+          requires:
+            - prepare-workspace
+      - build-web:
+          requires:
+            - test-web
+      - build-plugin-linux:
+          requires:
+            - prepare-workspace
+      - build-plugin-windows:
+          requires:
+            - prepare-workspace 
+
