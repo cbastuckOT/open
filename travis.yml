@@ -1,0 +1,12 @@
+language: cpp
+compiler: clang
+os: osx
+install: cmake -S . -B "build"
+script: cmake --build ./build --config Release
+#deploy:
+#  provider: s3
+#  access_key_id: ""
+#  secret_access_key: ""
+#  bucket: "arn:aws:s3:::artefacts-dump"
+#  skip_cleanup: true
+#  local_dir: build
